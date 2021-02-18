@@ -1,0 +1,25 @@
+{
+    "id": "A402B389",
+    "path": "~/Desktop/projects/GitProjects/MovementNetwork/R/data_workflow.Rmd",
+    "project_path": "data_workflow.Rmd",
+    "type": "r_markdown",
+    "hash": "500053833",
+    "contents": "",
+    "dirty": false,
+    "created": 1613687707159.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "142,0",
+        "scrollLine": "121",
+        "last_setup_crc32": "8E9C4ACBbb338d19"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1613689188,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1613689188047,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,100 @@
+"0",""
+"0","pkg_list <- c(""dplyr"", ""igraph"", ""sf"", ""ggplot2"", ""gridExtra"")"
+"0",""
+"0","lapply(pkg_list, FUN = function(pkg_list) {"
+"0","    do.call(""require"", list(pkg_list)) "
+"0","})"
+"2","Loading required package: dplyr
+"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"2","Loading required package: igraph
+"
+"2","
+Attaching package: ‘igraph’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    as_data_frame, groups, union
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    decompose, spectrum
+
+"
+"2","The following object is masked from ‘package:base’:
+
+    union
+
+"
+"2","Loading required package: sf
+"
+"2","Linking to GEOS 3.8.1, GDAL 3.1.1, PROJ 6.3.1
+"
+"2","Loading required package: ggplot2
+"
+"2","Loading required package: gridExtra
+"
+"2","
+Attaching package: ‘gridExtra’
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    combine
+
+"
+"1","[[1]]
+"
+"1","[1]"
+"1"," TRUE"
+"1","
+"
+"1","
+"
+"1","[[2]]
+"
+"1","[1]"
+"1"," TRUE"
+"1","
+"
+"1","
+"
+"1","[[3]]
+"
+"1","[1]"
+"1"," TRUE"
+"1","
+"
+"1","
+"
+"1","[[4]]
+"
+"1","[1]"
+"1"," TRUE"
+"1","
+"
+"1","
+"
+"1","[[5]]
+"
+"1","[1]"
+"1"," TRUE"
+"1","
+"
+"1","
+"

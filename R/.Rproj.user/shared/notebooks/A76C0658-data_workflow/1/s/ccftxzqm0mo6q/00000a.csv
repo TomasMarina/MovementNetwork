@@ -1,0 +1,10 @@
+"0","pdf(""../figures/nodemap_bytime.pdf"")
+grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+dev.off()
+"
+"1","null device "
+"1","
+"
+"1","          1 "
+"1","
+"

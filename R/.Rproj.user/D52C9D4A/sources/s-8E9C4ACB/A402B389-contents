@@ -1,0 +1,153 @@
+---
+title: "DATA_WORKFLOW"
+author: "T.I.M."
+date: "2/12/2021"
+output: html_document
+---
+
+This is a RMarkdown file. When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+Note that the `echo = FALSE` parameter was added to every code chunk to prevent printing of the R code within the document.
+
+Setup of RMarkdown file
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load needed packages
+
+```{r packages, echo=FALSE, include=FALSE}
+
+pkg_list <- c("dplyr", "igraph", "sf", "ggplot2", "gridExtra")
+
+lapply(pkg_list, FUN = function(pkg_list) {
+    do.call("require", list(pkg_list)) 
+})
+
+```
+
+Generate node and connections lists
+
+```{r data_treatment, echo=FALSE, include=TRUE}
+
+## Curate data to generate site (node) list
+
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+nodes_all <- data_raw %>%
+  select(id, hour, lon, lat, distppa, colonia, cluster) %>%
+  add_count(cluster) %>%
+  rename(frequency = n) %>%
+  distinct(cluster, hour, id, .keep_all = TRUE) %>%
+  mutate(cluster.dup = ifelse(duplicated(cluster) | duplicated(cluster, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(cluster, id, .keep_all = TRUE) %>%
+  group_by(cluster) %>%
+  mutate(no.ind = nrow(data.frame(cluster))) %>%
+  mutate(time = if_else(cluster.dup == "TRUE", "both", hour)) %>%
+  mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  rename(dist.col = distppa) %>%
+  distinct(cluster, .keep_all = TRUE) %>%
+  group_by(cluster, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  summarise() 
+
+  # mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"), 
+  #             labels = c("A", "B", "C", "D", "E")))
+
+## Site lists
+
+# All sites
+nodes_all
+# Day
+nodes_day <- nodes_all[nodes_all$time == 'day', ]
+no_sites_day <- nrow(nodes_day)
+# Night
+nodes_night <- nodes_all[nodes_all$time == 'night', ]
+no_sites_night <- nrow(nodes_night)
+# Both (sites visited during day & night)
+nodes_both <- nodes_all[nodes_all$time == 'both', ]
+no_sites_both <- nrow(nodes_both)
+
+## Export site lists as .csv files
+
+# write.csv(nodes_all, file = "../data/nodes_all.csv")
+# write.csv(nodes_day, file = "../data/nodes_day.csv")
+# write.csv(nodes_night, file = "../data/nodes_night.csv")
+# write.csv(nodes_both, file = "../data/nodes_both.csv")
+
+```
+
+Plots
+
+```{r nodes_viz, echo=FALSE}
+
+## Viz of nodes on Isla de los Estados map (idle)
+shapefile_idle <- "../shapes_plot/idle/idle.shp" %>%
+  st_read()
+
+## Plot sites on idle map
+
+# All sites
+no_sites_all <- nrow(nodes_all)
+nodemap_all <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_all,
+             aes(lon, lat, size = log(frequency), colour = no.ind)) +
+  scale_color_gradient(low = "blue", high = "red", "# individuals") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  guides(size = guide_legend("log(frec-visita)"), colour = guide_legend("# Individuos")) +
+  labs(title = "Sites") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_all))
+
+# Plots by time (day, night, both)
+nodemap_day <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_day,
+             aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites day") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_day))
+
+nodemap_night <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_night,
+             aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites night") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_night))
+
+nodemap_both <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_both,
+             aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites both (day & night)") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_both))
+
+# All plots
+nodemap_all
+grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+
+## Save plots
+
+# pdf("../figures/nodemap_all.pdf")
+# nodemap_all
+# dev.off()
+
+# pdf("../figures/nodemap_bytime.pdf")
+# grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+# dev.off()
+
+```
+
