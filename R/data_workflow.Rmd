@@ -81,7 +81,17 @@ Plots
 ```{r nodes_viz, echo=FALSE}
 
 ## Viz of nodes on Isla de los Estados map (idle)
+
+## Shapefiles
+
+# Isla de los Estados shapefile
 shapefile_idle <- "../shapes_plot/idle/idle.shp" %>%
+  st_read()
+# Penguins' patches shapefile
+# shapefile_pin <- "../shapes_plot/parches_pinguino/PPA_poly.shp" %>%
+#   st_read()
+# Penguins' colony shapefile
+shapefile_col <- "../shapes_plot/poligono_colonia/franklin_utm.shp" %>%
   st_read()
 
 ## Plot sites on idle map
@@ -101,11 +111,22 @@ nodemap_all <- ggplot() +
   labs(title = "Sites") +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_all))
 
+# All sites & penguin colony
+
+nodemap_all_penguin <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_all, aes(lon, lat), colour = "blue") +
+  geom_sf(data = shapefile_col, color = "red", fill = NA) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Striated Caracara sites and Penguins colony (red)")
+  
 # Plots by time (day, night, both)
 nodemap_day <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = nodes_day,
-             aes(lon, lat), colour = "blue") +
+  geom_point(data = nodes_day, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -115,8 +136,7 @@ nodemap_day <- ggplot() +
 
 nodemap_night <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = nodes_night,
-             aes(lon, lat), colour = "blue") +
+  geom_point(data = nodes_night, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -126,8 +146,7 @@ nodemap_night <- ggplot() +
 
 nodemap_both <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = nodes_both,
-             aes(lon, lat), colour = "blue") +
+  geom_point(data = nodes_both, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -137,6 +156,7 @@ nodemap_both <- ggplot() +
 
 # All plots
 nodemap_all
+nodemap_all_penguin
 grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
 
 ## Save plots
@@ -144,6 +164,10 @@ grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
 # pdf("../figures/nodemap_all.pdf")
 # nodemap_all
 # dev.off()
+
+pdf("../figures/nodemap_all_penguin.pdf")
+nodemap_all_penguin
+dev.off()
 
 # pdf("../figures/nodemap_bytime.pdf")
 # grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
