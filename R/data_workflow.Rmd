@@ -8,7 +8,7 @@ output: html_document
 This is a RMarkdown file. When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
 Note that the `echo = FALSE` parameter was added to every code chunk to prevent printing of the R code within the document.
 
-Setup of RMarkdown file
+Setup RMarkdown file
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -18,7 +18,7 @@ Load needed packages
 
 ```{r packages, echo=FALSE, include=FALSE}
 
-pkg_list <- c("dplyr", "igraph", "sf", "ggplot2", "gridExtra")
+pkg_list <- c("dplyr", "tidyr", "igraph", "sf", "ggplot2", "gridExtra")
 
 lapply(pkg_list, FUN = function(pkg_list) {
     do.call("require", list(pkg_list)) 
@@ -26,12 +26,13 @@ lapply(pkg_list, FUN = function(pkg_list) {
 
 ```
 
-Generate node and connections lists
+Generate node and link lists
 
 ```{r data_treatment, echo=FALSE, include=TRUE}
 
-## Curate data to generate site (node) list
+## Curate data to generate site (node) & movement (link) lists
 
+# Site list
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 nodes_all <- data_raw %>%
   select(id, hour, lon, lat, distppa, colonia, cluster) %>%
@@ -48,13 +49,15 @@ nodes_all <- data_raw %>%
   rename(dist.col = distppa) %>%
   distinct(cluster, .keep_all = TRUE) %>%
   group_by(cluster, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
-  summarise() 
+  summarise()
 
-  # mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"), 
-  #             labels = c("A", "B", "C", "D", "E")))
+# Site list filtered by 'colonia'
+# I chose the most visited (highest 'frequency') cluster as colony site
+nodes_colonia <- nodes_all %>%
+  group_by(colonia) %>%
+  filter(colonia == 0 | frequency == max(frequency))
 
-## Site lists
-
+# Different site lists
 # All sites
 nodes_all
 # Day
@@ -66,17 +69,60 @@ no_sites_night <- nrow(nodes_night)
 # Both (sites visited during day & night)
 nodes_both <- nodes_all[nodes_all$time == 'both', ]
 no_sites_both <- nrow(nodes_both)
+# Colonia
+nodes_colonia
+no_sites_colonia <- nrow(nodes_colonia)
+
 
 ## Export site lists as .csv files
-
 # write.csv(nodes_all, file = "../data/nodes_all.csv")
 # write.csv(nodes_day, file = "../data/nodes_day.csv")
 # write.csv(nodes_night, file = "../data/nodes_night.csv")
 # write.csv(nodes_both, file = "../data/nodes_both.csv")
+# write.csv(nodes_colonia, file = "../data/nodes_colonia.csv")
+
+
+# Movement list
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+links_all <- data_raw %>%
+  select(id, date, lon, lat, colonia, cluster) %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  select(ind, date, lon, lat, colonia, cluster) %>%
+  mutate(from = paste(cluster), to = NA) %>%
+  arrange(ind, date) %>%
+  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
+  group_by(ind) %>%
+  mutate(to = replace(to, n(), NA)) %>%
+  distinct(from, to, .keep_all = TRUE) %>%
+  select(from, to, ind, date) %>%
+  drop_na()
+
+# Link list filtered by 'colonia' site
+# Cluster #10 was considered as colony site
+links_col <- links_all
+from <-  c(1:9, 11:34, 36:38, 40:41, 43:46, 48:49, 55, 58:59,
+           63:65, 67, 69, 78:80, 82:84, 92, 96, 123)
+to <- 10
+for (i in seq_along(from))links_col$from[links_col$from==from[i]] <- to
+for (i in seq_along(from))links_col$to[links_col$to==from[i]] <- to
+links_colonia <- links_col %>% distinct(from, to, .keep_all = T)
+
+
+# Different link lists
+# All links
+links_all
+# Links filtered by 'colonia'
+links_colonia
+no_links_colonia <- nrow(links_colonia)
+
+## Export movement list as .csv file
+# write.csv(links_all, file = "../data/links_all.csv")
+# write.csv(links_colonia, file = "../data/links_colonia.csv")
 
 ```
 
-Plots
+Plot sites on Isla de los Estados map
 
 ```{r nodes_viz, echo=FALSE}
 
@@ -116,7 +162,7 @@ nodemap_all <- ggplot() +
 nodemap_all_penguin <- ggplot() +
   geom_sf(data = shapefile_idle) +
   geom_point(data = nodes_all, aes(lon, lat), colour = "blue") +
-  geom_sf(data = shapefile_col, color = "red", fill = NA) +
+  geom_sf(data = shapefile_col, colour = "red", fill = NA) +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -154,10 +200,25 @@ nodemap_both <- ggplot() +
   labs(title = "Sites both (day & night)") +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_both))
 
+# Colonia
+nodemap_colonia <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_colonia, aes(lon, lat, colour = as.factor(colonia))) +
+  scale_color_manual(values = c("0" = "blue", "1" = "red")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  guides(colour = guide_legend("Colonia")) +
+  labs(title = "Sites filtered by colonia") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_colonia))
+
+
 # All plots
 nodemap_all
 nodemap_all_penguin
 grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+nodemap_colonia
 
 ## Save plots
 
@@ -165,12 +226,90 @@ grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
 # nodemap_all
 # dev.off()
 
-pdf("../figures/nodemap_all_penguin.pdf")
-nodemap_all_penguin
-dev.off()
+# pdf("../figures/nodemap_all_penguin.pdf")
+# nodemap_all_penguin
+# dev.off()
 
 # pdf("../figures/nodemap_bytime.pdf")
 # grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+# dev.off()
+
+# pdf("../figures/nodemap_colonia.pdf")
+# nodemap_colonia
+# dev.off()
+
+```
+
+Create network as 'igraph' object
+
+```{r network, echo=FALSE}
+
+net_all <- graph_from_data_frame(links_all, directed = TRUE, vertices = nodes_all)
+net_colonia <- graph_from_data_frame(links_colonia, directed = TRUE, vertices = nodes_colonia)
+
+```
+
+Plot network
+
+```{r network_viz, echo=FALSE}
+
+## Data structure for plot on map
+
+# All data
+links_all$from <- as.integer(links_all$from)
+links_all$to <- as.integer(links_all$to)
+
+links_plot_all <- links_all %>%
+  inner_join(nodes_all %>% select(cluster, lon, lat), by = c('from' = 'cluster')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(nodes_all %>% select(cluster, lon, lat), by = c('to' = 'cluster')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_all) == nrow(links_all))
+
+# Data filtered by 'colonia' site
+links_plot_colonia <- links_colonia %>%
+  inner_join(nodes_colonia %>% select(cluster, lon, lat), by = c('from' = 'cluster')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(nodes_colonia %>% select(cluster, lon, lat), by = c('to' = 'cluster')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_colonia) == nrow(links_colonia))
+
+
+## Network plots
+
+V(net_all)$color <- "blue"
+V(net_all)$color[ V(net_all)$colonia == 1 ] <- "red"
+netmap_all <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_all,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_all, aes(lon, lat), colour = V(net_all)$color) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+
+V(net_colonia)$color <- "blue"
+V(net_colonia)$color[ V(net_colonia)$colonia == 1 ] <- "red"
+netmap_colonia <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_colonia,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_colonia, aes(lon, lat), colour = V(net_colonia)$color) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_colonia))
+
+
+## Save plots
+# pdf("../figures/netmap_colonia.pdf")
+# netmap_colonia
 # dev.off()
 
 ```
