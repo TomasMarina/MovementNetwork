@@ -33,26 +33,28 @@ Generate node and link lists
 ## Curate data to generate site (node) & movement (link) lists
 
 # Site list
+# 'cluster' is synonym with 'site'
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 nodes_all <- data_raw %>%
-  select(id, hour, lon, lat, distppa, colonia, cluster) %>%
-  add_count(cluster) %>%
+  rename(site = cluster) %>%
+  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
   rename(frequency = n) %>%
-  distinct(cluster, hour, id, .keep_all = TRUE) %>%
-  mutate(cluster.dup = ifelse(duplicated(cluster) | duplicated(cluster, fromLast = TRUE),
+  distinct(site, hour, id, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
                               "TRUE", "FALSE")) %>%
-  distinct(cluster, id, .keep_all = TRUE) %>%
-  group_by(cluster) %>%
-  mutate(no.ind = nrow(data.frame(cluster))) %>%
-  mutate(time = if_else(cluster.dup == "TRUE", "both", hour)) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", hour)) %>%
   mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
   rename(dist.col = distppa) %>%
-  distinct(cluster, .keep_all = TRUE) %>%
-  group_by(cluster, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
   summarise()
 
 # Site list filtered by 'colonia'
-# I chose the most visited (highest 'frequency') cluster as colony site
+# I chose the most visited (highest 'frequency') site as colony site
 nodes_colonia <- nodes_all %>%
   group_by(colonia) %>%
   filter(colonia == 0 | frequency == max(frequency))
@@ -73,7 +75,6 @@ no_sites_both <- nrow(nodes_both)
 nodes_colonia
 no_sites_colonia <- nrow(nodes_colonia)
 
-
 ## Export site lists as .csv files
 # write.csv(nodes_all, file = "../data/nodes_all.csv")
 # write.csv(nodes_day, file = "../data/nodes_day.csv")
@@ -83,13 +84,15 @@ no_sites_colonia <- nrow(nodes_colonia)
 
 
 # Movement list
+# 'cluster' is synonym with 'site'
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 links_all <- data_raw %>%
-  select(id, date, lon, lat, colonia, cluster) %>%
+  rename(site = cluster) %>%
+  select(id, date, lon, lat, colonia, site) %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
-  select(ind, date, lon, lat, colonia, cluster) %>%
-  mutate(from = paste(cluster), to = NA) %>%
+  select(ind, date, lon, lat, colonia, site) %>%
+  mutate(from = paste(site), to = NA) %>%
   arrange(ind, date) %>%
   mutate(to = ifelse(is.na(to), lead(from), to)) %>%
   group_by(ind) %>%
@@ -99,7 +102,7 @@ links_all <- data_raw %>%
   drop_na()
 
 # Link list filtered by 'colonia' site
-# Cluster #10 was considered as colony site
+# site #10 was considered as colony site
 links_col <- links_all
 from <-  c(1:9, 11:34, 36:38, 40:41, 43:46, 48:49, 55, 58:59,
            63:65, 67, 69, 78:80, 82:84, 92, 96, 123)
@@ -260,17 +263,17 @@ links_all$from <- as.integer(links_all$from)
 links_all$to <- as.integer(links_all$to)
 
 links_plot_all <- links_all %>%
-  inner_join(nodes_all %>% select(cluster, lon, lat), by = c('from' = 'cluster')) %>%
+  inner_join(nodes_all %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
-  inner_join(nodes_all %>% select(cluster, lon, lat), by = c('to' = 'cluster')) %>%
+  inner_join(nodes_all %>% select(site, lon, lat), by = c('to' = 'site')) %>%
   rename(xend = lon, yend = lat)
 assert_that(nrow(links_plot_all) == nrow(links_all))
 
 # Data filtered by 'colonia' site
 links_plot_colonia <- links_colonia %>%
-  inner_join(nodes_colonia %>% select(cluster, lon, lat), by = c('from' = 'cluster')) %>%
+  inner_join(nodes_colonia %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
-  inner_join(nodes_colonia %>% select(cluster, lon, lat), by = c('to' = 'cluster')) %>%
+  inner_join(nodes_colonia %>% select(site, lon, lat), by = c('to' = 'site')) %>%
   rename(xend = lon, yend = lat)
 assert_that(nrow(links_plot_colonia) == nrow(links_colonia))
 
@@ -314,3 +317,16 @@ netmap_colonia <- ggplot() +
 
 ```
 
+Test for movement pattern after sharing night site
+
+```{r common_bed, echo=FALSE}
+
+# Create data set with inds sharing night site
+sleep_tog <- data_raw %>%
+  select(date, hour, cluster, lon, lat, id) %>%
+  filter(hour == "04:00:00") %>%
+  arrange(date, cluster) %>%
+  group_by(date, cluster) %>%
+  filter(n() > 1)
+
+```
