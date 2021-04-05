@@ -32,6 +32,7 @@ Generate node and link lists
 
 ## Curate data to generate site (node) & movement (link) lists
 
+###########
 # Site list
 # 'cluster' is synonym with 'site'
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
@@ -59,6 +60,51 @@ nodes_colonia <- nodes_all %>%
   group_by(colonia) %>%
   filter(colonia == 0 | frequency == max(frequency))
 
+# Pre and pos-penguin lists (2020-03-10)
+nodes_prepen <- data_raw %>%
+  filter(date <= "2020-03-10") %>%
+  rename(site = cluster) %>%
+  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, id, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", hour)) %>%
+  mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  summarise()
+nodes_col_prepen <- nodes_prepen %>%
+  group_by(colonia) %>%
+  filter(colonia == 0 | frequency == max(frequency))
+
+nodes_pospen <- data_raw %>%
+  filter(date > "2020-03-10") %>%
+  rename(site = cluster) %>%
+  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, id, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", hour)) %>%
+  mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  summarise()
+nodes_col_pospen <- nodes_pospen %>%
+  group_by(colonia) %>%
+  filter(colonia == 0 | frequency == max(frequency))
+
 # Different site lists
 # All sites
 nodes_all
@@ -74,6 +120,14 @@ no_sites_both <- nrow(nodes_both)
 # Colonia
 nodes_colonia
 no_sites_colonia <- nrow(nodes_colonia)
+nodes_colonia_day <- nodes_colonia[nodes_colonia$time == 'day', ]
+no_sites_col_day <- nrow(nodes_colonia_day)
+nodes_colonia_night <- nodes_colonia[nodes_colonia$time == 'night', ]
+no_sites_col_night <- nrow(nodes_colonia_night)
+nodes_colonia_both <- nodes_colonia[nodes_colonia$time == 'both', ]
+no_sites_col_both <- nrow(nodes_colonia_both)
+nodes_col_prepen
+nodes_col_pospen
 
 ## Export site lists as .csv files
 # write.csv(nodes_all, file = "../data/nodes_all.csv")
@@ -81,8 +135,11 @@ no_sites_colonia <- nrow(nodes_colonia)
 # write.csv(nodes_night, file = "../data/nodes_night.csv")
 # write.csv(nodes_both, file = "../data/nodes_both.csv")
 # write.csv(nodes_colonia, file = "../data/nodes_colonia.csv")
+# write.csv(nodes_col_prepen, file = "../data/nodes_col_prepen.csv")
+# write.csv(nodes_col_pospen, file = "../data/nodes_col_pospen.csv")
 
 
+###############
 # Movement list
 # 'cluster' is synonym with 'site'
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
@@ -111,6 +168,12 @@ for (i in seq_along(from))links_col$from[links_col$from==from[i]] <- to
 for (i in seq_along(from))links_col$to[links_col$to==from[i]] <- to
 links_colonia <- links_col %>% distinct(from, to, .keep_all = T)
 
+# Pre and pos-penguin lists (2020-03-10)
+links_col_prepen <- links_colonia %>%
+  filter(date <= "2020-03-10")
+
+links_col_pospen <- links_colonia %>%
+  filter(date > "2020-03-10")
 
 # Different link lists
 # All links
@@ -118,10 +181,14 @@ links_all
 # Links filtered by 'colonia'
 links_colonia
 no_links_colonia <- nrow(links_colonia)
+links_col_prepen
+links_col_pospen
 
 ## Export movement list as .csv file
 # write.csv(links_all, file = "../data/links_all.csv")
 # write.csv(links_colonia, file = "../data/links_colonia.csv")
+# write.csv(links_col_prepen, file = "../data/links_col_prepen.csv")
+# write.csv(links_col_pospen, file = "../data/links_col_pospen.csv")
 
 ```
 
@@ -160,7 +227,7 @@ nodemap_all <- ggplot() +
   labs(title = "Sites") +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_all))
 
-# All sites & penguin colony
+# All sites & shape of penguin colony
 
 nodemap_all_penguin <- ggplot() +
   geom_sf(data = shapefile_idle) +
@@ -216,6 +283,30 @@ nodemap_colonia <- ggplot() +
   labs(title = "Sites filtered by colonia") +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_colonia))
 
+nodemap_time <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_colonia, aes(lon, lat, colour = time, size = frequency)) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  guides(colour = guide_legend("Time", order = 1), size = guide_legend("Frequency", order = 2))
+
+int_breaks <- function(x, n = 5) {
+  l <- pretty(x, n)
+  l[abs(l %% 1) < .Machine$double.eps ^ 0.5] 
+}
+
+nodemap_ind <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_colonia, aes(lon, lat, colour = no.ind,  size = frequency)) +
+  scale_color_gradient(low = "blue", high = "red", "# individuals", breaks = int_breaks) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  guides(colour = guide_legend("# individuals", order = 1), size = guide_legend("Frequency", order = 2))
+
 
 # All plots
 nodemap_all
@@ -239,6 +330,13 @@ nodemap_colonia
 
 # pdf("../figures/nodemap_colonia.pdf")
 # nodemap_colonia
+# dev.off()
+
+# pdf("../figures/nodemaps_sites.pdf")
+# grid.arrange(arrangeGrob(nodemap_ind,
+#                          top = "How much and who visits the sites?"),
+#              arrangeGrob(nodemap_time,
+#                          top = "Time of visit and frequency"), nrow = 2)
 # dev.off()
 
 ```
@@ -309,8 +407,10 @@ netmap_colonia <- ggplot() +
         axis.title.y = element_blank()) +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_colonia))
 
+# To be continue: netmwork maps pre and pospenguin departure
 
 ## Save plots
+
 # pdf("../figures/netmap_colonia.pdf")
 # netmap_colonia
 # dev.off()
@@ -322,11 +422,16 @@ Test for movement pattern after sharing night site
 ```{r common_bed, echo=FALSE}
 
 # Create data set with inds sharing night site
-sleep_tog <- data_raw %>%
-  select(date, hour, cluster, lon, lat, id) %>%
+night_share <- data_raw %>%
+  rename(site = cluster) %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  select(date, hour, site, lon, lat, ind) %>%
   filter(hour == "04:00:00") %>%
-  arrange(date, cluster) %>%
-  group_by(date, cluster) %>%
+  arrange(date, site) %>%
+  group_by(date, site) %>%
   filter(n() > 1)
+
+# To be continue: check for inds movement pattern after sharing night site
 
 ```
