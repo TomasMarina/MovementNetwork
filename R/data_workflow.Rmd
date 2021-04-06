@@ -18,7 +18,7 @@ Load needed packages
 
 ```{r packages, echo=FALSE, include=FALSE}
 
-pkg_list <- c("dplyr", "tidyr", "igraph", "sf", "ggplot2", "gridExtra")
+pkg_list <- c("dplyr", "tidyr", "igraph", "sf", "ggplot2", "gridExtra", "assertthat")
 
 lapply(pkg_list, FUN = function(pkg_list) {
     do.call("require", list(pkg_list)) 
@@ -54,11 +54,15 @@ nodes_all <- data_raw %>%
   group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
   summarise()
 
-# Site list filtered by 'colonia'
+
+## Site list filtered by 'colonia'
 # I chose the most visited (highest 'frequency') site as colony site
+# Then I incorporated 'frequency' and 'no.ind' data into the colony site
 nodes_colonia <- nodes_all %>%
   group_by(colonia) %>%
   filter(colonia == 0 | frequency == max(frequency))
+nodes_colonia$frequency[nodes_colonia$colonia == 1] <- sum(nodes_all[nodes_all$colonia == 1,]$frequency)
+nodes_colonia$no.ind[nodes_colonia$colonia == 1] <- 5
 
 # Pre and pos-penguin lists (2020-03-10)
 nodes_prepen <- data_raw %>%
@@ -82,6 +86,9 @@ nodes_prepen <- data_raw %>%
 nodes_col_prepen <- nodes_prepen %>%
   group_by(colonia) %>%
   filter(colonia == 0 | frequency == max(frequency))
+nodes_col_prepen$site[nodes_col_prepen$colonia == 1] <- 10
+nodes_col_prepen$frequency[nodes_col_prepen$colonia == 1] <- sum(nodes_prepen[nodes_prepen$colonia == 1,]$frequency)
+
 
 nodes_pospen <- data_raw %>%
   filter(date > "2020-03-10") %>%
@@ -104,6 +111,8 @@ nodes_pospen <- data_raw %>%
 nodes_col_pospen <- nodes_pospen %>%
   group_by(colonia) %>%
   filter(colonia == 0 | frequency == max(frequency))
+nodes_col_pospen$frequency[nodes_col_pospen$colonia == 1] <- sum(nodes_pospen[nodes_pospen$colonia == 1,]$frequency)
+
 
 # Different site lists
 # All sites
@@ -159,7 +168,8 @@ links_all <- data_raw %>%
   drop_na()
 
 # Link list filtered by 'colonia' site
-# site #10 was considered as colony site
+# Site #10 was considered as colony site, so I replaced all [colonia == 1] sites
+# from 'links_all' with #10 site
 links_col <- links_all
 from <-  c(1:9, 11:34, 36:38, 40:41, 43:46, 48:49, 55, 58:59,
            63:65, 67, 69, 78:80, 82:84, 92, 96, 123)
@@ -350,9 +360,22 @@ net_colonia <- graph_from_data_frame(links_colonia, directed = TRUE, vertices = 
 
 ```
 
-Plot network
+Plot networks
 
 ```{r network_viz, echo=FALSE}
+
+## Shapefiles
+
+# Isla de los Estados shapefile
+shapefile_idle <- "../shapes_plot/idle/idle.shp" %>%
+  st_read()
+# Penguins' patches shapefile
+# shapefile_pin <- "../shapes_plot/parches_pinguino/PPA_poly.shp" %>%
+#   st_read()
+# Penguins' colony shapefile
+shapefile_col <- "../shapes_plot/poligono_colonia/franklin_utm.shp" %>%
+  st_read()
+
 
 ## Data structure for plot on map
 
@@ -368,6 +391,9 @@ links_plot_all <- links_all %>%
 assert_that(nrow(links_plot_all) == nrow(links_all))
 
 # Data filtered by 'colonia' site
+links_colonia$from <- as.integer(links_colonia$from)
+links_colonia$to <- as.integer(links_colonia$to)
+
 links_plot_colonia <- links_colonia %>%
   inner_join(nodes_colonia %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
@@ -407,13 +433,63 @@ netmap_colonia <- ggplot() +
         axis.title.y = element_blank()) +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_colonia))
 
-# To be continue: netmwork maps pre and pospenguin departure
+# Pre and pos-penguin lists (2020-03-10)
+# Firstly, structure link data for plotting on map 
+links_col_prepen$from <- as.integer(links_col_prepen$from)
+links_col_prepen$to <- as.integer(links_col_prepen$to)
+links_plot_col_prepen <- links_col_prepen %>%
+  inner_join(nodes_col_prepen %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(nodes_col_prepen %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_col_prepen) == nrow(links_col_prepen))
+
+netmap_col_prepen <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_col_prepen,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_col_prepen, aes(lon, lat),
+             colour = ifelse(nodes_col_prepen$colonia == 1, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Movement network Pre-penguin departure (2020-03-10)")
+
+links_col_pospen$from <- as.integer(links_col_pospen$from)
+links_col_pospen$to <- as.integer(links_col_pospen$to)
+links_plot_col_pospen <- links_col_pospen %>%
+  inner_join(nodes_col_pospen %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(nodes_col_pospen %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_col_pospen) == nrow(links_col_pospen))
+
+netmap_col_pospen <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_col_pospen,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_col_pospen, aes(lon, lat),
+             colour = ifelse(nodes_col_pospen$colonia == 1, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Movement network Pos-penguin departure (2020-03-10)")
 
 ## Save plots
 
 # pdf("../figures/netmap_colonia.pdf")
 # netmap_colonia
 # dev.off()
+
+pdf("../figures/netmap_col_penguin.pdf")
+grid.arrange(netmap_col_prepen, netmap_col_pospen, nrow = 2)
+dev.off()
 
 ```
 
