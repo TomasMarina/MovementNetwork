@@ -65,6 +65,7 @@ nodes_colonia$frequency[nodes_colonia$colonia == 1] <- sum(nodes_all[nodes_all$c
 nodes_colonia$no.ind[nodes_colonia$colonia == 1] <- 5
 
 # Day and night lists
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 nodes_day <- data_raw %>%
   filter(hour == "16:00:00") %>%
   rename(site = cluster) %>%
@@ -88,6 +89,7 @@ nodes_col_day <- nodes_day %>%
 nodes_col_day$frequency[nodes_col_day$colonia == 1] <- sum(nodes_day[nodes_day$colonia == 1,]$frequency)
 nodes_col_day$no.ind[nodes_col_day$colonia == 1] <- 5
 
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 nodes_night <- data_raw %>%
   filter(hour == "04:00:00") %>%
   rename(site = cluster) %>%
@@ -186,8 +188,8 @@ nodes_col_pospen
 ## Export site lists as .csv files
 # write.csv(nodes_all, file = "../data/nodes_all.csv")
 # write.csv(nodes_colonia, file = "../data/nodes_colonia.csv")
-write.csv(nodes_col_day, file = "../data/nodes_col_day.csv")
-write.csv(nodes_col_night, file = "../data/nodes_col_night.csv")
+# write.csv(nodes_col_day, file = "../data/nodes_col_day.csv")
+# write.csv(nodes_col_night, file = "../data/nodes_col_night.csv")
 # write.csv(nodes_col_prepen, file = "../data/nodes_col_prepen.csv")
 # write.csv(nodes_col_pospen, file = "../data/nodes_col_pospen.csv")
 
