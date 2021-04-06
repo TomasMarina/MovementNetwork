@@ -64,6 +64,54 @@ nodes_colonia <- nodes_all %>%
 nodes_colonia$frequency[nodes_colonia$colonia == 1] <- sum(nodes_all[nodes_all$colonia == 1,]$frequency)
 nodes_colonia$no.ind[nodes_colonia$colonia == 1] <- 5
 
+# Day and night lists
+nodes_day <- data_raw %>%
+  filter(hour == "16:00:00") %>%
+  rename(site = cluster) %>%
+  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+    mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  rename(time = hour) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  summarise()
+nodes_col_day <- nodes_day %>%
+  group_by(colonia) %>%
+  filter(colonia == 0 | frequency == max(frequency))
+nodes_col_day$frequency[nodes_col_day$colonia == 1] <- sum(nodes_day[nodes_day$colonia == 1,]$frequency)
+nodes_col_day$no.ind[nodes_col_day$colonia == 1] <- 5
+
+nodes_night <- data_raw %>%
+  filter(hour == "04:00:00") %>%
+  rename(site = cluster) %>%
+  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+    mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, id, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  rename(time = hour) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  summarise()
+nodes_col_night <- nodes_night %>%
+  group_by(colonia) %>%
+  filter(colonia == 0 | frequency == max(frequency))
+nodes_col_night$frequency[nodes_col_night$colonia == 1] <- sum(nodes_night[nodes_night$colonia == 1,]$frequency)
+nodes_col_night$no.ind[nodes_col_night$colonia == 1] <- 5
+
+
 # Pre and pos-penguin lists (2020-03-10)
 nodes_prepen <- data_raw %>%
   filter(date <= "2020-03-10") %>%
@@ -88,7 +136,6 @@ nodes_col_prepen <- nodes_prepen %>%
   filter(colonia == 0 | frequency == max(frequency))
 nodes_col_prepen$site[nodes_col_prepen$colonia == 1] <- 10
 nodes_col_prepen$frequency[nodes_col_prepen$colonia == 1] <- sum(nodes_prepen[nodes_prepen$colonia == 1,]$frequency)
-
 
 nodes_pospen <- data_raw %>%
   filter(date > "2020-03-10") %>%
@@ -118,32 +165,29 @@ nodes_col_pospen$frequency[nodes_col_pospen$colonia == 1] <- sum(nodes_pospen[no
 # All sites
 nodes_all
 # Day
-nodes_day <- nodes_all[nodes_all$time == 'day', ]
-no_sites_day <- nrow(nodes_day)
+nodes_all_day <- nodes_all[nodes_all$time == 'day', ]
+no_sites_all_day <- nrow(nodes_all_day)
 # Night
-nodes_night <- nodes_all[nodes_all$time == 'night', ]
-no_sites_night <- nrow(nodes_night)
+nodes_all_night <- nodes_all[nodes_all$time == 'night', ]
+no_sites_all_night <- nrow(nodes_all_night)
 # Both (sites visited during day & night)
-nodes_both <- nodes_all[nodes_all$time == 'both', ]
-no_sites_both <- nrow(nodes_both)
+nodes_all_both <- nodes_all[nodes_all$time == 'both', ]
+no_sites_all_both <- nrow(nodes_all_both)
 # Colonia
 nodes_colonia
 no_sites_colonia <- nrow(nodes_colonia)
-nodes_colonia_day <- nodes_colonia[nodes_colonia$time == 'day', ]
-no_sites_col_day <- nrow(nodes_colonia_day)
-nodes_colonia_night <- nodes_colonia[nodes_colonia$time == 'night', ]
-no_sites_col_night <- nrow(nodes_colonia_night)
-nodes_colonia_both <- nodes_colonia[nodes_colonia$time == 'both', ]
-no_sites_col_both <- nrow(nodes_colonia_both)
+nodes_col_day
+no_sites_col_day <- nrow(nodes_col_day)
+nodes_col_night
+no_sites_col_night <- nrow(nodes_col_night)
 nodes_col_prepen
 nodes_col_pospen
 
 ## Export site lists as .csv files
 # write.csv(nodes_all, file = "../data/nodes_all.csv")
-# write.csv(nodes_day, file = "../data/nodes_day.csv")
-# write.csv(nodes_night, file = "../data/nodes_night.csv")
-# write.csv(nodes_both, file = "../data/nodes_both.csv")
 # write.csv(nodes_colonia, file = "../data/nodes_colonia.csv")
+write.csv(nodes_col_day, file = "../data/nodes_col_day.csv")
+write.csv(nodes_col_night, file = "../data/nodes_col_night.csv")
 # write.csv(nodes_col_prepen, file = "../data/nodes_col_prepen.csv")
 # write.csv(nodes_col_pospen, file = "../data/nodes_col_pospen.csv")
 
@@ -238,7 +282,6 @@ nodemap_all <- ggplot() +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_all))
 
 # All sites & shape of penguin colony
-
 nodemap_all_penguin <- ggplot() +
   geom_sf(data = shapefile_idle) +
   geom_point(data = nodes_all, aes(lon, lat), colour = "blue") +
@@ -249,38 +292,10 @@ nodemap_all_penguin <- ggplot() +
         axis.title.y = element_blank()) +
   labs(title = "Striated Caracara sites and Penguins colony (red)")
   
-# Plots by time (day, night, both)
-nodemap_day <- ggplot() +
-  geom_sf(data = shapefile_idle) +
-  geom_point(data = nodes_day, aes(lon, lat), colour = "blue") +
-  theme_bw() +
-  theme(axis.line = element_line(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  labs(title = "Sites day") +
-  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_day))
 
-nodemap_night <- ggplot() +
-  geom_sf(data = shapefile_idle) +
-  geom_point(data = nodes_night, aes(lon, lat), colour = "blue") +
-  theme_bw() +
-  theme(axis.line = element_line(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  labs(title = "Sites night") +
-  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_night))
+############################
+# Filtered by 'colonia' site
 
-nodemap_both <- ggplot() +
-  geom_sf(data = shapefile_idle) +
-  geom_point(data = nodes_both, aes(lon, lat), colour = "blue") +
-  theme_bw() +
-  theme(axis.line = element_line(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  labs(title = "Sites both (day & night)") +
-  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_both))
-
-# Colonia
 nodemap_colonia <- ggplot() +
   geom_sf(data = shapefile_idle) +
   geom_point(data = nodes_colonia, aes(lon, lat, colour = as.factor(colonia))) +
@@ -317,11 +332,32 @@ nodemap_ind <- ggplot() +
         axis.title.y = element_blank()) +
   guides(colour = guide_legend("# individuals", order = 1), size = guide_legend("Frequency", order = 2))
 
+# Plots by time (day, night)
+nodemap_col_day <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_col_day, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites day") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_col_day))
 
-# All plots
+nodemap_col_night <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_col_night, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites night") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_col_night))
+
+
+## All plots
 nodemap_all
 nodemap_all_penguin
-grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+grid.arrange(nodemap_col_day, nodemap_col_night, nrow = 2)
 nodemap_colonia
 
 ## Save plots
@@ -335,7 +371,7 @@ nodemap_colonia
 # dev.off()
 
 # pdf("../figures/nodemap_bytime.pdf")
-# grid.arrange(nodemap_both, nodemap_day, nodemap_night, nrow = 2)
+# grid.arrange(nodemap_col_day, nodemap_col_night, nrow = 2)
 # dev.off()
 
 # pdf("../figures/nodemap_colonia.pdf")
@@ -357,6 +393,8 @@ Create network as 'igraph' object
 
 net_all <- graph_from_data_frame(links_all, directed = TRUE, vertices = nodes_all)
 net_colonia <- graph_from_data_frame(links_colonia, directed = TRUE, vertices = nodes_colonia)
+net_col_prepen <- graph_from_data_frame(links_col_prepen, directed = TRUE, vertices = nodes_col_prepen)
+net_col_pospen <- graph_from_data_frame(links_col_pospen, directed = TRUE, vertices = nodes_col_pospen)
 
 ```
 
@@ -364,6 +402,7 @@ Plot networks
 
 ```{r network_viz, echo=FALSE}
 
+#############
 ## Shapefiles
 
 # Isla de los Estados shapefile
@@ -377,12 +416,12 @@ shapefile_col <- "../shapes_plot/poligono_colonia/franklin_utm.shp" %>%
   st_read()
 
 
-## Data structure for plot on map
+################
+## Network plots
+# Firstly, organize link data for plotting on map
 
-# All data
 links_all$from <- as.integer(links_all$from)
 links_all$to <- as.integer(links_all$to)
-
 links_plot_all <- links_all %>%
   inner_join(nodes_all %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
@@ -390,10 +429,22 @@ links_plot_all <- links_all %>%
   rename(xend = lon, yend = lat)
 assert_that(nrow(links_plot_all) == nrow(links_all))
 
-# Data filtered by 'colonia' site
+netmap_all <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_all,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_all, aes(lon, lat),
+             colour = ifelse(nodes_all$colonia == 1, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+
+
 links_colonia$from <- as.integer(links_colonia$from)
 links_colonia$to <- as.integer(links_colonia$to)
-
 links_plot_colonia <- links_colonia %>%
   inner_join(nodes_colonia %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
@@ -401,40 +452,21 @@ links_plot_colonia <- links_colonia %>%
   rename(xend = lon, yend = lat)
 assert_that(nrow(links_plot_colonia) == nrow(links_colonia))
 
-
-## Network plots
-
-V(net_all)$color <- "blue"
-V(net_all)$color[ V(net_all)$colonia == 1 ] <- "red"
-netmap_all <- ggplot() +
-  geom_sf(data = shapefile_idle) +
-  geom_segment(data = links_plot_all,
-               aes(x = x, xend = xend, y = y, yend = yend),
-               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
-               size = 0.5, alpha = 0.5) +
-  geom_point(data = nodes_all, aes(lon, lat), colour = V(net_all)$color) +
-  theme_bw() +
-  theme(axis.line = element_line(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank())
-
-V(net_colonia)$color <- "blue"
-V(net_colonia)$color[ V(net_colonia)$colonia == 1 ] <- "red"
 netmap_colonia <- ggplot() +
   geom_sf(data = shapefile_idle) +
   geom_segment(data = links_plot_colonia,
                aes(x = x, xend = xend, y = y, yend = yend),
                arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
                size = 0.5, alpha = 0.5) +
-  geom_point(data = nodes_colonia, aes(lon, lat), colour = V(net_colonia)$color) +
+  geom_point(data = nodes_colonia, aes(lon, lat),
+             colour = ifelse(nodes_colonia$colonia == 1, "red", "blue")) +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_colonia))
 
-# Pre and pos-penguin lists (2020-03-10)
-# Firstly, structure link data for plotting on map 
+# Pre and pos-penguin networks (2020-03-10)
 links_col_prepen$from <- as.integer(links_col_prepen$from)
 links_col_prepen$to <- as.integer(links_col_prepen$to)
 links_plot_col_prepen <- links_col_prepen %>%
@@ -457,6 +489,7 @@ netmap_col_prepen <- ggplot() +
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(title = "Movement network Pre-penguin departure (2020-03-10)")
+
 
 links_col_pospen$from <- as.integer(links_col_pospen$from)
 links_col_pospen$to <- as.integer(links_col_pospen$to)
@@ -481,15 +514,51 @@ netmap_col_pospen <- ggplot() +
         axis.title.y = element_blank()) +
   labs(title = "Movement network Pos-penguin departure (2020-03-10)")
 
+
+# By individual
+netmap_indE <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_colonia,
+               aes(x = x, xend = xend, y = y, yend = yend, colour = ind),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  scale_color_manual(values = c("A" = "gray60", "B" = "gray60", "C" = "gray60",
+                                "D" = "gray60", "E" = "red")) +
+  geom_point(data = nodes_colonia, aes(lon, lat),
+             colour = ifelse(nodes_colonia$colonia == 1, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+   guides(colour = guide_legend("Individual")) +
+   labs(title = "Movement network by Individual E")
+
 ## Save plots
 
 # pdf("../figures/netmap_colonia.pdf")
 # netmap_colonia
 # dev.off()
 
-pdf("../figures/netmap_col_penguin.pdf")
-grid.arrange(netmap_col_prepen, netmap_col_pospen, nrow = 2)
-dev.off()
+# pdf("../figures/netmap_col_penguin.pdf")
+# grid.arrange(netmap_col_prepen, netmap_col_pospen, nrow = 2)
+# dev.off()
+
+# pdf("../figures/netmap_indA.pdf")
+# netmap_indA
+# dev.off()
+# pdf("../figures/netmap_indB.pdf")
+# netmap_indB
+# dev.off()
+# pdf("../figures/netmap_indC.pdf")
+# netmap_indC
+# dev.off()
+# pdf("../figures/netmap_indD.pdf")
+# netmap_indD
+# dev.off()
+# pdf("../figures/netmap_indE.pdf")
+# netmap_indE
+# dev.off()
+
 
 ```
 
