@@ -26,7 +26,7 @@ lapply(pkg_list, FUN = function(pkg_list) {
 
 ```
 
-Generate node and link lists
+Generate site and link lists
 
 ```{r data_treatment, echo=FALSE, include=TRUE}
 
@@ -73,7 +73,7 @@ nodes_day <- data_raw %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, id, .keep_all = TRUE) %>%
-    mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
                               "TRUE", "FALSE")) %>%
   distinct(site, id, .keep_all = TRUE) %>%
   group_by(site) %>%
@@ -97,7 +97,7 @@ nodes_night <- data_raw %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, id, .keep_all = TRUE) %>%
-    mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
                               "TRUE", "FALSE")) %>%
   distinct(site, id, .keep_all = TRUE) %>%
   group_by(site) %>%
@@ -584,46 +584,95 @@ night_share <- data_raw %>%
   filter(n() > 1)
 
 
-## Sites visited before and after sharing night site
+## Sites visited and movement pattern before and after sharing night site
 
 # Comparison between inds B and E before and after sharing site 6 on "2020-02-26"
-indB6_bef <- data_raw %>%
+# Sites visited
+site_indB6_bef <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   rename(site = cluster) %>%
+  rename(dist.col = distppa) %>%
   filter(ind == "B") %>%
   filter(date <= "2020-02-16") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
   
-indB6_aft <- data_raw %>%
-    mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
-              labels = c("A", "B", "C", "D", "E"))) %>%
-  rename(site = cluster) %>%
-  filter(ind == "B") %>%
-  filter(date > "2020-02-16") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
-
-indE_bef <- data_raw %>%
+site_indB6_aft <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   rename(site = cluster) %>%
-  filter(ind == "E") %>%
-  filter(date <= "2020-02-16") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
+  rename(dist.col = distppa) %>%
+  filter(ind == "B") %>%
+  filter(date > "2020-02-16") %>%
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
 
-indE_aft <- data_raw %>%
-      mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+site_indE_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   rename(site = cluster) %>%
+  rename(dist.col = distppa) %>%
+  filter(ind == "E") %>%
+  filter(date <= "2020-02-16") %>%
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
+
+site_indE_aft <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  rename(dist.col = distppa) %>%
   filter(ind == "E") %>%
   filter(date > "2020-02-16") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
-
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
 
 sitemap_indB6_bef <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indB6_bef, aes(lon, lat),
-             colour = ifelse(indB6_bef$site == 6, "red", "blue")) +
+  geom_point(data = site_indB6_bef, aes(lon, lat), colour = "blue") +
+  geom_point(data = subset(site_indB6_bef, site_indB6_bef$site == 6),
+     aes(lon, lat, colour = "red"), show.legend = FALSE) +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -632,7 +681,7 @@ sitemap_indB6_bef <- ggplot() +
   
 sitemap_indB6_aft <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indB6_aft, aes(lon, lat), colour = "blue") +
+  geom_point(data = site_indB6_aft, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -641,8 +690,9 @@ sitemap_indB6_aft <- ggplot() +
 
 sitemap_indE_bef <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indE_bef, aes(lon, lat),
-             colour = ifelse(indE_bef$site == 6, "red", "blue")) +
+  geom_point(data = site_indE_bef, aes(lon, lat), colour = "blue") +
+  geom_point(data = subset(site_indE_bef, site_indE_bef$site == 6),
+     aes(lon, lat, colour = "red"), show.legend = FALSE) +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -651,56 +701,107 @@ sitemap_indE_bef <- ggplot() +
 
 sitemap_indE_aft <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indE_aft, aes(lon, lat), colour = "blue") +
+  geom_point(data = site_indE_aft, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(title = "Sites of ind E after sharing night site")
 
+
 # pdf("../figures/nodemap_share_indsBE.pdf")
 # grid.arrange(sitemap_indB6_bef, sitemap_indB6_aft, sitemap_indE_bef, sitemap_indE_aft,
 #              nrow = 2)
 # dev.off()
 
+
 # Comparison between inds A and B before and after sharing site 153 on "2020-05-03"
-indA_bef <- data_raw %>%
+site_indA_bef <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   rename(site = cluster) %>%
+  rename(dist.col = distppa) %>%
   filter(ind == "A") %>%
   filter(date <= "2020-05-03") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
   
-indA_aft <- data_raw %>%
-    mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
-              labels = c("A", "B", "C", "D", "E"))) %>%
-  rename(site = cluster) %>%
-  filter(ind == "A") %>%
-  filter(date > "2020-05-03") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
-
-indB1_bef <- data_raw %>%
+site_indA_aft <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   rename(site = cluster) %>%
-  filter(ind == "B") %>%
-  filter(date <= "2020-05-03") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
+  rename(dist.col = distppa) %>%
+  filter(ind == "A") %>%
+  filter(date > "2020-05-03") %>%
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
 
-indB1_aft <- data_raw %>%
-      mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+site_indB1_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   rename(site = cluster) %>%
+  rename(dist.col = distppa) %>%
+  filter(ind == "B") %>%
+  filter(date <= "2020-05-03") %>%
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
+
+site_indB1_aft <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  rename(dist.col = distppa) %>%
   filter(ind == "B") %>%
   filter(date > "2020-05-03") %>%
-  select(date, hour, site, lon, lat, colonia, ind)
+  select(date, hour, site, lon, lat, colonia, dist.col, ind) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, hour, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(no.ind = nrow(data.frame(site))) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(date, site, frequency, lon, lat, colonia, dist.col, ind) %>%
+  summarise()
 
 
 sitemap_indA_bef <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indA_bef, aes(lon, lat),
-             colour = ifelse(indA_bef$site == 153, "red", "blue")) +
+  geom_point(data = site_indA_bef, aes(lon, lat), colour = "blue") +
+  geom_point(data = subset(site_indA_bef, site_indA_bef$site == 153),
+     aes(lon, lat, colour = "red"), show.legend = FALSE) +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -709,7 +810,7 @@ sitemap_indA_bef <- ggplot() +
 
 sitemap_indA_aft <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indA_aft, aes(lon, lat), colour = "blue") +
+  geom_point(data = site_indA_aft, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -718,8 +819,9 @@ sitemap_indA_aft <- ggplot() +
 
 sitemap_indB1_bef <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indB1_bef, aes(lon, lat),
-             colour = ifelse(indB1_bef$site == 153, "red", "blue")) +
+  geom_point(data = site_indB1_bef, aes(lon, lat), colour = "blue") +
+  geom_point(data = subset(site_indB1_bef, site_indB1_bef$site == 153),
+     aes(lon, lat, colour = "red"), show.legend = FALSE) +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
@@ -728,17 +830,201 @@ sitemap_indB1_bef <- ggplot() +
 
 sitemap_indB1_aft <- ggplot() +
   geom_sf(data = shapefile_idle) +
-  geom_point(data = indB1_aft, aes(lon, lat), colour = "blue") +
+  geom_point(data = site_indB1_aft, aes(lon, lat), colour = "blue") +
   theme_bw() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(title = "Sites of ind B after sharing night site")
 
+
 # pdf("../figures/nodemap_share_indsAB.pdf")
 # grid.arrange(sitemap_indA_bef, sitemap_indA_aft, sitemap_indB1_bef, sitemap_indB1_aft,
 #              nrow = 2)
 # dev.off()
 
+
+# Movement pattern
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+links_indA_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "A") %>%
+  filter(date <= "2020-05-03") %>%
+  select(ind, date, lon, lat, colonia, site) %>%
+  mutate(from = paste(site), to = NA) %>%
+  arrange(ind, date) %>%
+  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
+  group_by(ind) %>%
+  mutate(to = replace(to, n(), NA)) %>%
+  distinct(from, to, .keep_all = TRUE) %>%
+  select(from, to, ind, date) %>%
+  drop_na()
+
+links_indA_aft <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "A") %>%
+  filter(date > "2020-05-03") %>%
+  select(ind, date, lon, lat, colonia, site) %>%
+  mutate(from = paste(site), to = NA) %>%
+  arrange(ind, date) %>%
+  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
+  group_by(ind) %>%
+  mutate(to = replace(to, n(), NA)) %>%
+  distinct(from, to, .keep_all = TRUE) %>%
+  select(from, to, ind, date) %>%
+  drop_na()
+
+links_indB1_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "B") %>%
+  filter(date <= "2020-05-03") %>%
+  select(ind, date, lon, lat, colonia, site) %>%
+  mutate(from = paste(site), to = NA) %>%
+  arrange(ind, date) %>%
+  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
+  group_by(ind) %>%
+  mutate(to = replace(to, n(), NA)) %>%
+  distinct(from, to, .keep_all = TRUE) %>%
+  select(from, to, ind, date) %>%
+  drop_na()
+
+links_indB1_aft <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "B") %>%
+  filter(date > "2020-05-03") %>%
+  select(ind, date, lon, lat, colonia, site) %>%
+  mutate(from = paste(site), to = NA) %>%
+  arrange(ind, date) %>%
+  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
+  group_by(ind) %>%
+  mutate(to = replace(to, n(), NA)) %>%
+  distinct(from, to, .keep_all = TRUE) %>%
+  select(from, to, ind, date) %>%
+  drop_na()
+
+# Plot movement pattern
+# Firstly, structure link data for plotting on map
+links_indA_bef$from <- as.integer(links_indA_bef$from)
+links_indA_bef$to <- as.integer(links_indA_bef$to)
+links_plot_indA_bef <- links_indA_bef %>%
+  inner_join(site_indA_bef %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(site_indA_bef %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_indA_bef) == nrow(links_indA_bef))
+
+links_indA_aft$from <- as.integer(links_indA_aft$from)
+links_indA_aft$to <- as.integer(links_indA_aft$to)
+links_plot_indA_aft <- links_indA_aft %>%
+  inner_join(site_indA_aft %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(site_indA_aft %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_indA_aft) == nrow(links_indA_aft))
+
+links_indB1_bef$from <- as.integer(links_indB1_bef$from)
+links_indB1_bef$to <- as.integer(links_indB1_bef$to)
+links_plot_indB1_bef <- links_indB1_bef %>%
+  inner_join(site_indB1_bef %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(site_indB1_bef %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_indB1_bef) == nrow(links_indB1_bef))
+
+links_indB1_aft$from <- as.integer(links_indB1_aft$from)
+links_indB1_aft$to <- as.integer(links_indB1_aft$to)
+links_plot_indB1_aft <- links_indB1_aft %>%
+  inner_join(site_indB1_aft %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(site_indB1_aft %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_indB1_aft) == nrow(links_indB1_aft))
+
+
+netmap_indA_bef <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_indA_bef,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = site_indA_bef, aes(lon, lat), colour = "blue") +
+  geom_point(data = subset(site_indA_bef, site_indA_bef$site == 153),
+     aes(lon, lat, colour = "red"), show.legend = FALSE) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Network ind A before sharing night site")
+
+netmap_indA_aft <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_indA_aft,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = site_indA_aft, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Network ind A after sharing night site")
+
+netmap_indB1_bef <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_indB1_bef,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = site_indB1_bef, aes(lon, lat), colour = "blue") +
+  geom_point(data = subset(site_indB1_bef, site_indB1_bef$site == 153),
+     aes(lon, lat, colour = "red"), show.legend = FALSE) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Network ind B before sharing night site")
+
+netmap_indB1_aft <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_indB1_aft,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = site_indB1_aft, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Network ind B after sharing night site")
+
+
+# pdf("../figures/netmap_share_indsAB.pdf")
+# grid.arrange(netmap_indA_bef, netmap_indA_aft, netmap_indB1_bef, netmap_indB1_aft,
+#              nrow = 2)
+# dev.off()
+
+```
+
+Network analysis
+
+```{r network_analysis, echo=FALSE}
+
+## Network 'igraph' objects
+
+net_colonia <- graph_from_data_frame(links_colonia, directed = TRUE, vertices = nodes_colonia)
+net_col_prepen <- graph_from_data_frame(links_col_prepen, directed = TRUE, vertices = nodes_col_prepen)
+net_col_pospen <- graph_from_data_frame(links_col_pospen, directed = TRUE, vertices = nodes_col_pospen)
+
+## Degree distribution
+
+## Centrality indices
 
 ```
