@@ -195,7 +195,7 @@ nodes_col_pospen
 
 
 ###############
-# Movement list
+# Movement (link) list
 # 'cluster' is synonym with 'site'
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 links_all <- data_raw %>%
@@ -238,7 +238,9 @@ links_all
 links_colonia
 no_links_colonia <- nrow(links_colonia)
 links_col_prepen
+no_links_col_prepen <- nrow(links_col_prepen)
 links_col_pospen
+no_links_col_pospen <- nrow(links_col_pospen)
 
 ## Export movement list as .csv file
 # write.csv(links_all, file = "../data/links_all.csv")
@@ -250,7 +252,7 @@ links_col_pospen
 
 Plot sites on Isla de los Estados map
 
-```{r nodes_viz, echo=FALSE}
+```{r sites_viz, echo=FALSE}
 
 ## Viz of nodes on Isla de los Estados map (idle)
 
@@ -381,10 +383,9 @@ nodemap_colonia
 # dev.off()
 
 # pdf("../figures/nodemaps_sites.pdf")
-# grid.arrange(arrangeGrob(nodemap_ind,
-#                          top = "How much and who visits the sites?"),
-#              arrangeGrob(nodemap_time,
-#                          top = "Time of visit and frequency"), nrow = 2)
+# grid.arrange(arrangeGrob(nodemap_ind, top = "How much and who visits the sites?"),
+#              arrangeGrob(nodemap_time, top = "Time of visit and frequency"),
+#              nrow = 2)
 # dev.off()
 
 ```
@@ -518,6 +519,7 @@ netmap_col_pospen <- ggplot() +
 
 
 # By individual
+# Change 'geom_segment' colour in 'scale_color_manual' to highlight ind
 netmap_indE <- ggplot() +
   geom_sf(data = shapefile_idle) +
   geom_segment(data = links_plot_colonia,
@@ -564,11 +566,13 @@ netmap_indE <- ggplot() +
 
 ```
 
-Test for movement pattern after sharing night site
+Sites and movement pattern after sharing night site
 
-```{r common_bed, echo=FALSE}
+```{r share_night, echo=FALSE}
 
-# Create data set with inds sharing night site
+## Create dataset with inds sharing night site
+
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 night_share <- data_raw %>%
   rename(site = cluster) %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
@@ -579,6 +583,162 @@ night_share <- data_raw %>%
   group_by(date, site) %>%
   filter(n() > 1)
 
-# To be continue: check for inds movement pattern after sharing night site
+
+## Sites visited before and after sharing night site
+
+# Comparison between inds B and E before and after sharing site 6 on "2020-02-26"
+indB6_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "B") %>%
+  filter(date <= "2020-02-16") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+  
+indB6_aft <- data_raw %>%
+    mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "B") %>%
+  filter(date > "2020-02-16") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+
+indE_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "E") %>%
+  filter(date <= "2020-02-16") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+
+indE_aft <- data_raw %>%
+      mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "E") %>%
+  filter(date > "2020-02-16") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+
+
+sitemap_indB6_bef <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indB6_bef, aes(lon, lat),
+             colour = ifelse(indB6_bef$site == 6, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind B before sharing night site")
+  
+sitemap_indB6_aft <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indB6_aft, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind B after sharing night site")
+
+sitemap_indE_bef <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indE_bef, aes(lon, lat),
+             colour = ifelse(indE_bef$site == 6, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind E before sharing night site")
+
+sitemap_indE_aft <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indE_aft, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind E after sharing night site")
+
+# pdf("../figures/nodemap_share_indsBE.pdf")
+# grid.arrange(sitemap_indB6_bef, sitemap_indB6_aft, sitemap_indE_bef, sitemap_indE_aft,
+#              nrow = 2)
+# dev.off()
+
+# Comparison between inds A and B before and after sharing site 153 on "2020-05-03"
+indA_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "A") %>%
+  filter(date <= "2020-05-03") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+  
+indA_aft <- data_raw %>%
+    mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "A") %>%
+  filter(date > "2020-05-03") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+
+indB1_bef <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "B") %>%
+  filter(date <= "2020-05-03") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+
+indB1_aft <- data_raw %>%
+      mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  rename(site = cluster) %>%
+  filter(ind == "B") %>%
+  filter(date > "2020-05-03") %>%
+  select(date, hour, site, lon, lat, colonia, ind)
+
+
+sitemap_indA_bef <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indA_bef, aes(lon, lat),
+             colour = ifelse(indA_bef$site == 153, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind A before sharing night site")
+
+sitemap_indA_aft <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indA_aft, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind A after sharing night site")
+
+sitemap_indB1_bef <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indB1_bef, aes(lon, lat),
+             colour = ifelse(indB1_bef$site == 153, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind B before sharing night site")
+
+sitemap_indB1_aft <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = indB1_aft, aes(lon, lat), colour = "blue") +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Sites of ind B after sharing night site")
+
+# pdf("../figures/nodemap_share_indsAB.pdf")
+# grid.arrange(sitemap_indA_bef, sitemap_indA_aft, sitemap_indB1_bef, sitemap_indB1_aft,
+#              nrow = 2)
+# dev.off()
+
 
 ```
