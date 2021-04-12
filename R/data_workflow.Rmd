@@ -64,6 +64,7 @@ nodes_colonia <- nodes_all %>%
 nodes_colonia$frequency[nodes_colonia$colonia == 1] <- sum(nodes_all[nodes_all$colonia == 1,]$frequency)
 nodes_colonia$no.ind[nodes_colonia$colonia == 1] <- 5
 
+
 # Day and night lists
 data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
 nodes_day <- data_raw %>%
@@ -163,6 +164,118 @@ nodes_col_pospen <- nodes_pospen %>%
 nodes_col_pospen$frequency[nodes_col_pospen$colonia == 1] <- sum(nodes_pospen[nodes_pospen$colonia == 1,]$frequency)
 
 
+# Site lists by Individual
+# Individual A == "49127"
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+nodes_indA <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  filter(ind == "A") %>%
+  rename(site = cluster) %>%
+  mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, time, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  summarise()
+
+# Individual B == "49138"
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+nodes_indB <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  filter(ind == "B") %>%
+  rename(site = cluster) %>%
+  mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, time, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  summarise()
+
+# Individual C == "49152"
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+nodes_indC <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  filter(ind == "C") %>%
+  rename(site = cluster) %>%
+  mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, time, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  summarise()
+
+# Individual D == "49178"
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+nodes_indD <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  filter(ind == "D") %>%
+  rename(site = cluster) %>%
+  mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, time, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  summarise()
+
+# Individual E == "49180"
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+nodes_indE <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E"))) %>%
+  filter(ind == "E") %>%
+  rename(site = cluster) %>%
+  mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
+  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  add_count(site) %>%
+  rename(frequency = n) %>%
+  distinct(site, time, ind, .keep_all = TRUE) %>%
+  mutate(site.dup = ifelse(duplicated(site) | duplicated(site, fromLast = TRUE),
+                              "TRUE", "FALSE")) %>%
+  distinct(site, ind, .keep_all = TRUE) %>%
+  group_by(site) %>%
+  mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
+  rename(dist.col = distppa) %>%
+  distinct(site, .keep_all = TRUE) %>%
+  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  summarise()
+
+
 # Different site lists
 # All sites
 nodes_all
@@ -184,6 +297,12 @@ nodes_col_night
 no_sites_col_night <- nrow(nodes_col_night)
 nodes_col_prepen
 nodes_col_pospen
+# Individual
+nodes_indA
+nodes_indB
+nodes_indC
+nodes_indD
+nodes_indE
 
 ## Export site lists as .csv files
 # write.csv(nodes_all, file = "../data/nodes_all.csv")
@@ -192,6 +311,11 @@ nodes_col_pospen
 # write.csv(nodes_col_night, file = "../data/nodes_col_night.csv")
 # write.csv(nodes_col_prepen, file = "../data/nodes_col_prepen.csv")
 # write.csv(nodes_col_pospen, file = "../data/nodes_col_pospen.csv")
+# write.csv(nodes_indA, file = "../data/nodes_indA.csv")
+# write.csv(nodes_indB, file = "../data/nodes_indB.csv")
+# write.csv(nodes_indC, file = "../data/nodes_indC.csv")
+# write.csv(nodes_indD, file = "../data/nodes_indD.csv")
+# write.csv(nodes_indE, file = "../data/nodes_indE.csv")
 
 
 ###############
@@ -224,12 +348,35 @@ for (i in seq_along(from))links_col$from[links_col$from==from[i]] <- to
 for (i in seq_along(from))links_col$to[links_col$to==from[i]] <- to
 links_colonia <- links_col %>% distinct(from, to, .keep_all = T)
 
+
 # Pre and pos-penguin lists (2020-03-10)
 links_col_prepen <- links_colonia %>%
   filter(date <= "2020-03-10")
 
 links_col_pospen <- links_colonia %>%
   filter(date > "2020-03-10")
+
+
+# Link lists by Individual
+data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+links_indA <- data_raw %>%
+  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
+              labels = c("A", "B", "C", "D", "E")))
+# To be continue...
+  
+
+  rename(site = cluster) %>%
+  select(id, date, lon, lat, colonia, site) %>%
+    select(ind, date, lon, lat, colonia, site) %>%
+  mutate(from = paste(site), to = NA) %>%
+  arrange(ind, date) %>%
+  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
+  group_by(ind) %>%
+  mutate(to = replace(to, n(), NA)) %>%
+  distinct(from, to, .keep_all = TRUE) %>%
+  select(from, to, ind, date) %>%
+  drop_na()
+
 
 # Different link lists
 # All links
