@@ -1170,14 +1170,6 @@ net_col_prepen <- graph_from_data_frame(links_col_prepen, directed = TRUE, verti
 net_col_pospen <- graph_from_data_frame(links_col_pospen, directed = TRUE, vertices = nodes_col_pospen)
 
 
-
-vertex.attributes(net_col_pospen)
-length(V(net_col_pospen)$lobos == "1")
-sum(degree(net_colonia, v = V(net_colonia)$lobos == "1", mode = "total"))
-hist(degree(net_col_prepen, v = V(net_col_prepen)$lobos == "1", mode = "total"))
-
-degree.distribution(net_col_pospen, v = V(net_col_pospen)$lobos == "1", mode = "total")
-
 ## Centrality indices
 
 ```
@@ -1268,6 +1260,9 @@ netmap_col_lobos_con <- ggplot() +
         legend.position = "none") +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_to_lobos))
 
+# pdf(file = "../figures/plot_links_lobos.pdf")
+# netmap_col_lobos_con
+# dev.off()
 
 ## Calcular caminos más cortos desde sitio colonia ("10") hacia los 32 sitios lobos
 caminos <- shortest.paths(net_colonia, v = V(net_colonia)$colonia == "1", to = V(net_colonia)$lobos == "1", mode = "out")
