@@ -8,11 +8,13 @@ output: html_document
 This is a RMarkdown file. When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
 Note that the `echo = FALSE` parameter was added to every code chunk to prevent printing of the R code within the document.
 
+
 Setup RMarkdown file
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 
 Load needed packages
 
@@ -26,19 +28,21 @@ lapply(pkg_list, FUN = function(pkg_list) {
 
 ```
 
+
 Generate site and link lists
 
 ```{r data_treatment, echo=FALSE, include=TRUE}
 
 ## Curate data to generate site (node) & movement (link) lists
 
+# Site lists
 ###########
-# Site list
+
 # 'cluster' is synonym with 'site'
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_all <- data_raw %>%
   rename(site = cluster) %>%
-  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  select(id, hour, lon, lat, distppa, colonia, site, distlobos, lobos) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, hour, id, .keep_all = TRUE) %>%
@@ -49,9 +53,9 @@ nodes_all <- data_raw %>%
   mutate(no.ind = nrow(data.frame(site))) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", hour)) %>%
   mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, no.ind) %>%
   summarise()
 
 
@@ -65,12 +69,13 @@ nodes_colonia$frequency[nodes_colonia$colonia == 1] <- sum(nodes_all[nodes_all$c
 nodes_colonia$no.ind[nodes_colonia$colonia == 1] <- 5
 
 
+
 # Day and night lists
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_day <- data_raw %>%
   filter(hour == "16:00:00") %>%
   rename(site = cluster) %>%
-  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  select(id, hour, lon, lat, distppa, colonia, site, distlobos, lobos) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, id, .keep_all = TRUE) %>%
@@ -79,10 +84,10 @@ nodes_day <- data_raw %>%
   distinct(site, id, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(no.ind = nrow(data.frame(site))) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
   rename(time = hour) %>%
-  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, no.ind) %>%
   summarise()
 nodes_col_day <- nodes_day %>%
   group_by(colonia) %>%
@@ -90,11 +95,11 @@ nodes_col_day <- nodes_day %>%
 nodes_col_day$frequency[nodes_col_day$colonia == 1] <- sum(nodes_day[nodes_day$colonia == 1,]$frequency)
 nodes_col_day$no.ind[nodes_col_day$colonia == 1] <- 5
 
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_night <- data_raw %>%
   filter(hour == "04:00:00") %>%
   rename(site = cluster) %>%
-  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  select(id, hour, lon, lat, distppa, colonia, site, distlobos, lobos) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, id, .keep_all = TRUE) %>%
@@ -103,10 +108,10 @@ nodes_night <- data_raw %>%
   distinct(site, id, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(no.ind = nrow(data.frame(site))) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
   rename(time = hour) %>%
-  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, no.ind) %>%
   summarise()
 nodes_col_night <- nodes_night %>%
   group_by(colonia) %>%
@@ -119,7 +124,7 @@ nodes_col_night$no.ind[nodes_col_night$colonia == 1] <- 5
 nodes_prepen <- data_raw %>%
   filter(date <= "2020-03-10") %>%
   rename(site = cluster) %>%
-  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  select(id, hour, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, hour, id, .keep_all = TRUE) %>%
@@ -130,9 +135,9 @@ nodes_prepen <- data_raw %>%
   mutate(no.ind = nrow(data.frame(site))) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", hour)) %>%
   mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, no.ind) %>%
   summarise()
 nodes_col_prepen <- nodes_prepen %>%
   group_by(colonia) %>%
@@ -143,7 +148,7 @@ nodes_col_prepen$frequency[nodes_col_prepen$colonia == 1] <- sum(nodes_prepen[no
 nodes_pospen <- data_raw %>%
   filter(date > "2020-03-10") %>%
   rename(site = cluster) %>%
-  select(id, hour, lon, lat, distppa, colonia, site) %>%
+  select(id, hour, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, hour, id, .keep_all = TRUE) %>%
@@ -154,9 +159,9 @@ nodes_pospen <- data_raw %>%
   mutate(no.ind = nrow(data.frame(site))) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", hour)) %>%
   mutate(time = recode(time, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(site, lon, lat, time, colonia, dist.col, frequency, no.ind) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, no.ind) %>%
   summarise()
 nodes_col_pospen <- nodes_pospen %>%
   group_by(colonia) %>%
@@ -166,14 +171,14 @@ nodes_col_pospen$frequency[nodes_col_pospen$colonia == 1] <- sum(nodes_pospen[no
 
 # Site lists by Individual
 # Individual A == "49127"
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_indA <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   filter(ind == "A") %>%
   rename(site = cluster) %>%
   mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  select(ind, time, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, time, ind, .keep_all = TRUE) %>%
@@ -182,20 +187,23 @@ nodes_indA <- data_raw %>%
   distinct(site, ind, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, ind) %>%
   summarise()
+nodes_indA$site[nodes_indA$colonia == 1] <- 10
+nodes_indA$frequency[nodes_indA$colonia == 1] <- sum(nodes_indA[nodes_indA$colonia == 1,]$frequency)
+nodes_indA <- nodes_indA[!duplicated(nodes_indA$site),]
 
 # Individual B == "49138"
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_indB <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   filter(ind == "B") %>%
   rename(site = cluster) %>%
   mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  select(ind, time, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, time, ind, .keep_all = TRUE) %>%
@@ -204,20 +212,23 @@ nodes_indB <- data_raw %>%
   distinct(site, ind, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, ind) %>%
   summarise()
+nodes_indB$site[nodes_indB$colonia == 1] <- 10
+nodes_indB$frequency[nodes_indB$colonia == 1] <- sum(nodes_indB[nodes_indB$colonia == 1,]$frequency)
+nodes_indB <- nodes_indB[!duplicated(nodes_indB$site),]
 
 # Individual C == "49152"
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_indC <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   filter(ind == "C") %>%
   rename(site = cluster) %>%
   mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  select(ind, time, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, time, ind, .keep_all = TRUE) %>%
@@ -226,20 +237,23 @@ nodes_indC <- data_raw %>%
   distinct(site, ind, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, ind) %>%
   summarise()
+nodes_indC$site[nodes_indC$colonia == 1] <- 10
+nodes_indC$frequency[nodes_indC$colonia == 1] <- sum(nodes_indC[nodes_indC$colonia == 1,]$frequency)
+nodes_indC <- nodes_indC[!duplicated(nodes_indC$site),]
 
 # Individual D == "49178"
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_indD <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   filter(ind == "D") %>%
   rename(site = cluster) %>%
   mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  select(ind, time, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, time, ind, .keep_all = TRUE) %>%
@@ -248,20 +262,23 @@ nodes_indD <- data_raw %>%
   distinct(site, ind, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, ind) %>%
   summarise()
+nodes_indD$site[nodes_indD$colonia == 1] <- 10
+nodes_indD$frequency[nodes_indD$colonia == 1] <- sum(nodes_indD[nodes_indD$colonia == 1,]$frequency)
+nodes_indD <- nodes_indD[!duplicated(nodes_indD$site),]
 
 # Individual E == "49180"
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 nodes_indE <- data_raw %>%
   mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
               labels = c("A", "B", "C", "D", "E"))) %>%
   filter(ind == "E") %>%
   rename(site = cluster) %>%
   mutate(time = recode(hour, "16:00:00" = "day", "04:00:00" = "night")) %>%
-  select(ind, time, lon, lat, distppa, colonia, site) %>%
+  select(ind, time, lon, lat, distppa, colonia, distlobos, lobos, site) %>%
   add_count(site) %>%
   rename(frequency = n) %>%
   distinct(site, time, ind, .keep_all = TRUE) %>%
@@ -270,10 +287,13 @@ nodes_indE <- data_raw %>%
   distinct(site, ind, .keep_all = TRUE) %>%
   group_by(site) %>%
   mutate(time = if_else(site.dup == "TRUE", "both", time)) %>%
-  rename(dist.col = distppa) %>%
+  rename(dist.col = distppa, dist.lob = distlobos) %>%
   distinct(site, .keep_all = TRUE) %>%
-  group_by(ind, site, lon, lat, time, colonia, dist.col, frequency) %>%
+  group_by(site, lon, lat, time, colonia, dist.col, dist.lob, lobos, frequency, ind) %>%
   summarise()
+nodes_indE$site[nodes_indE$colonia == 1] <- 10
+nodes_indE$frequency[nodes_indE$colonia == 1] <- sum(nodes_indE[nodes_indE$colonia == 1,]$frequency)
+nodes_indE <- nodes_indE[!duplicated(nodes_indE$site),]
 
 
 # Different site lists
@@ -305,23 +325,14 @@ nodes_indD
 nodes_indE
 
 ## Export site lists as .csv files
-# write.csv(nodes_all, file = "../data/nodes_all.csv")
-# write.csv(nodes_colonia, file = "../data/nodes_colonia.csv")
-# write.csv(nodes_col_day, file = "../data/nodes_col_day.csv")
-# write.csv(nodes_col_night, file = "../data/nodes_col_night.csv")
-# write.csv(nodes_col_prepen, file = "../data/nodes_col_prepen.csv")
-# write.csv(nodes_col_pospen, file = "../data/nodes_col_pospen.csv")
-# write.csv(nodes_indA, file = "../data/nodes_indA.csv")
-# write.csv(nodes_indB, file = "../data/nodes_indB.csv")
-# write.csv(nodes_indC, file = "../data/nodes_indC.csv")
-# write.csv(nodes_indD, file = "../data/nodes_indD.csv")
-# write.csv(nodes_indE, file = "../data/nodes_indE.csv")
+# write.csv(list_name, file = "../data/list_name.csv")
 
 
+# Movement (link) lists
 ###############
-# Movement (link) list
+
 # 'cluster' is synonym with 'site'
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
+data_raw <- read.csv("../data/datos_nov2020_colonia_lobos.csv", sep = ",", header = TRUE)
 links_all <- data_raw %>%
   rename(site = cluster) %>%
   select(id, date, lon, lat, colonia, site) %>%
@@ -358,24 +369,20 @@ links_col_pospen <- links_colonia %>%
 
 
 # Link lists by Individual
-data_raw <- read.csv("../data/datos_nov2020.csv", sep = ",", header = TRUE)
-links_indA <- data_raw %>%
-  mutate(ind = factor(id, levels = c("49127", "49138", "49152", "49178", "49180"),
-              labels = c("A", "B", "C", "D", "E")))
-# To be continue...
-  
+links_indA <- links_colonia %>%
+  filter(ind == "A")
 
-  rename(site = cluster) %>%
-  select(id, date, lon, lat, colonia, site) %>%
-    select(ind, date, lon, lat, colonia, site) %>%
-  mutate(from = paste(site), to = NA) %>%
-  arrange(ind, date) %>%
-  mutate(to = ifelse(is.na(to), lead(from), to)) %>%
-  group_by(ind) %>%
-  mutate(to = replace(to, n(), NA)) %>%
-  distinct(from, to, .keep_all = TRUE) %>%
-  select(from, to, ind, date) %>%
-  drop_na()
+links_indB <- links_colonia %>%
+  filter(ind == "B")
+
+links_indC <- links_colonia %>%
+  filter(ind == "C")
+
+links_indD <- links_colonia %>%
+  filter(ind == "D")
+
+links_indE <- links_colonia %>%
+  filter(ind == "E")
 
 
 # Different link lists
@@ -388,14 +395,18 @@ links_col_prepen
 no_links_col_prepen <- nrow(links_col_prepen)
 links_col_pospen
 no_links_col_pospen <- nrow(links_col_pospen)
+links_indA
+links_indB
+links_indC
+links_indD
+links_indE
 
 ## Export movement list as .csv file
-# write.csv(links_all, file = "../data/links_all.csv")
-# write.csv(links_colonia, file = "../data/links_colonia.csv")
-# write.csv(links_col_prepen, file = "../data/links_col_prepen.csv")
-# write.csv(links_col_pospen, file = "../data/links_col_pospen.csv")
+# write.csv(list_name, file = "../data/list_name.csv")
+
 
 ```
+
 
 Plot sites on Isla de los Estados map
 
@@ -420,9 +431,9 @@ shapefile_col <- "../shapes_plot/poligono_colonia/franklin_utm.shp" %>%
 # All sites
 no_sites_all <- nrow(nodes_all)
 nodemap_all <- ggplot() +
-  geom_sf(data = shapefile_idle) +
+  geom_sf(data = shapefile_idle) + 
   geom_point(data = nodes_all,
-             aes(lon, lat, size = log(frequency), colour = no.ind)) +
+              aes(lat, lon, size = log(frequency), colour = no.ind)) +
   scale_color_gradient(low = "blue", high = "red", "# individuals") +
   theme_bw() +
   theme(axis.line = element_line(),
@@ -431,6 +442,7 @@ nodemap_all <- ggplot() +
   guides(size = guide_legend("log(frec-visita)"), colour = guide_legend("# Individuos")) +
   labs(title = "Sites") +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_all))
+
 
 # All sites & shape of penguin colony
 nodemap_all_penguin <- ggplot() +
@@ -447,6 +459,7 @@ nodemap_all_penguin <- ggplot() +
 ############################
 # Filtered by 'colonia' site
 
+no_sites_colonia <- nrow(nodes_colonia)
 nodemap_colonia <- ggplot() +
   geom_sf(data = shapefile_idle) +
   geom_point(data = nodes_colonia, aes(lon, lat, colour = as.factor(colonia))) +
@@ -513,20 +526,12 @@ nodemap_colonia
 
 ## Save plots
 
-# pdf("../figures/nodemap_all.pdf")
-# nodemap_all
-# dev.off()
-
-# pdf("../figures/nodemap_all_penguin.pdf")
-# nodemap_all_penguin
+# pdf("../figures/plot_name.pdf")
+# plot_name
 # dev.off()
 
 # pdf("../figures/nodemap_bytime.pdf")
 # grid.arrange(nodemap_col_day, nodemap_col_night, nrow = 2)
-# dev.off()
-
-# pdf("../figures/nodemap_colonia.pdf")
-# nodemap_colonia
 # dev.off()
 
 # pdf("../figures/nodemaps_sites.pdf")
@@ -537,6 +542,7 @@ nodemap_colonia
 
 ```
 
+
 Create network as 'igraph' object
 
 ```{r network, echo=FALSE}
@@ -545,8 +551,15 @@ net_all <- graph_from_data_frame(links_all, directed = TRUE, vertices = nodes_al
 net_colonia <- graph_from_data_frame(links_colonia, directed = TRUE, vertices = nodes_colonia)
 net_col_prepen <- graph_from_data_frame(links_col_prepen, directed = TRUE, vertices = nodes_col_prepen)
 net_col_pospen <- graph_from_data_frame(links_col_pospen, directed = TRUE, vertices = nodes_col_pospen)
+net_col_indA <- graph_from_data_frame(links_indA, directed = TRUE, vertices = nodes_indA)
+net_col_indB <- graph_from_data_frame(links_indB, directed = TRUE, vertices = nodes_indB)
+net_col_indC <- graph_from_data_frame(links_indC, directed = TRUE, vertices = nodes_indC)
+net_col_indD <- graph_from_data_frame(links_indD, directed = TRUE, vertices = nodes_indD)
+net_col_indE <- graph_from_data_frame(links_indE, directed = TRUE, vertices = nodes_indE)
+
 
 ```
+
 
 Plot networks
 
@@ -598,8 +611,7 @@ links_colonia$to <- as.integer(links_colonia$to)
 links_plot_colonia <- links_colonia %>%
   inner_join(nodes_colonia %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
-  inner_join(nodes_colonia %>% select(site, lon, lat), by = c('to' = 'site')) %>%
-  rename(xend = lon, yend = lat)
+  inner_join(nodes_colonia %>% select(site, lon, lat), by = c('to' = 'site'))
 assert_that(nrow(links_plot_colonia) == nrow(links_colonia))
 
 netmap_colonia <- ggplot() +
@@ -615,6 +627,7 @@ netmap_colonia <- ggplot() +
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_colonia))
+
 
 # Pre and pos-penguin networks (2020-03-10)
 links_col_prepen$from <- as.integer(links_col_prepen$from)
@@ -686,32 +699,17 @@ netmap_indE <- ggplot() +
 
 ## Save plots
 
-# pdf("../figures/netmap_colonia.pdf")
-# netmap_colonia
+# pdf("../figures/plot_name.pdf")
+# plot_name
 # dev.off()
 
 # pdf("../figures/netmap_col_penguin.pdf")
 # grid.arrange(netmap_col_prepen, netmap_col_pospen, nrow = 2)
 # dev.off()
 
-# pdf("../figures/netmap_indA.pdf")
-# netmap_indA
-# dev.off()
-# pdf("../figures/netmap_indB.pdf")
-# netmap_indB
-# dev.off()
-# pdf("../figures/netmap_indC.pdf")
-# netmap_indC
-# dev.off()
-# pdf("../figures/netmap_indD.pdf")
-# netmap_indD
-# dev.off()
-# pdf("../figures/netmap_indE.pdf")
-# netmap_indE
-# dev.off()
-
 
 ```
+
 
 Sites and movement pattern after sharing night site
 
@@ -1160,6 +1158,7 @@ netmap_indB1_aft <- ggplot() +
 
 ```
 
+
 Network analysis
 
 ```{r network_analysis, echo=FALSE}
@@ -1170,8 +1169,112 @@ net_colonia <- graph_from_data_frame(links_colonia, directed = TRUE, vertices = 
 net_col_prepen <- graph_from_data_frame(links_col_prepen, directed = TRUE, vertices = nodes_col_prepen)
 net_col_pospen <- graph_from_data_frame(links_col_pospen, directed = TRUE, vertices = nodes_col_pospen)
 
-## Degree distribution
+
+
+vertex.attributes(net_col_pospen)
+length(V(net_col_pospen)$lobos == "1")
+sum(degree(net_colonia, v = V(net_colonia)$lobos == "1", mode = "total"))
+hist(degree(net_col_prepen, v = V(net_col_prepen)$lobos == "1", mode = "total"))
+
+degree.distribution(net_col_pospen, v = V(net_col_pospen)$lobos == "1", mode = "total")
 
 ## Centrality indices
+
+```
+
+
+Analysis of lobos data
+
+```{r lobos_analysis, echo=FALSE}
+
+## Análisis de sitios lobos
+
+# Se necesitan los siguientes objetos:
+nodes_colonia
+nodes_col_pospen
+links_colonia
+links_col_pospen
+shapefile_idle
+links_plot_colonia
+links_plot_col_pospen
+net_colonia
+net_col_pospen
+
+
+## Gráfico de sitios lobos
+no_sites_lobos <- length(which(nodes_colonia$lobos == "1"))
+
+nodemap_col_lobos <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_point(data = nodes_colonia, aes(lon, lat, colour = as.factor(lobos))) +
+  scale_color_manual(values = c("0" = "blue", "1" = "red")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  guides(colour = guide_legend("Lobos")) +
+  labs(title = "Sitios colonias de lobos") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# sites:', no_sites_lobos))
+
+
+## Histograma de visitas absolutas (registros GPS) y conexiones de sitios lobos pos-partida de pingüinos
+lobos_pos <- subset(nodes_col_pospen, lobos == "1")
+hist_vis <- ggplot(lobos_pos, aes(x = lobos_pos$frequency)) +
+  geom_bar() +
+  labs(x = "Sitios asociados a colonias de lobos", y = "Frecuencia de visita")
+
+degree_lob <- degree(net_col_pospen, v = V(net_col_pospen)$lobos == "1", mode = "total")
+hist_con <- ggplot(data.frame(degree_lob), aes(x = data.frame(degree_lob)[,1])) +
+  geom_bar() +
+  labs(x = "Sitios asociados a colonias de lobos", y = "Frecuencia de conexiones")
+
+# Conteo e identificación de conexiones de sitios lobos en red total y red pos-partida de pingüinos
+no_links_lobos <- sum(degree(net_colonia, v = V(net_colonia)$lobos == "1", mode = "total"))
+links_lobos <- incident_edges(net_colonia, v = V(net_colonia)$lobos == "1", mode = "all")
+
+no_links_lobos_pos <- sum(degree(net_col_pospen, v = V(net_col_pospen)$lobos == "1", mode = "total"))
+links_lobos_pos <- incident_edges(net_col_pospen, v = V(net_col_pospen)$lobos == "1", mode = "all")
+
+
+## Gráfico de red marcando conexiones hacia sitios lobos en red pos-partida de pingüinos
+# Diámetro de sitios lobos por conexiones totales (hacia y desde) en red pos-partida de pingüinos
+degree <- degree(net_col_pospen, mode = "total")
+
+links_col_pospen$from <- as.integer(links_col_pospen$from)
+links_col_pospen$to <- as.integer(links_col_pospen$to)
+links_plot_col_pospen <- links_col_pospen %>%
+  inner_join(nodes_col_pospen %>% select(site, lon, lat), by = c('from' = 'site')) %>%
+  rename(x = lon, y = lat) %>%
+  inner_join(nodes_col_pospen %>% select(site, lon, lat), by = c('to' = 'site')) %>%
+  rename(xend = lon, yend = lat)
+assert_that(nrow(links_plot_col_pospen) == nrow(links_col_pospen))
+
+links_plot_col_pospen$lobos <- ifelse(links_plot_col_pospen$to %in% c("77", "81", "85", "90", "91", "93", "100", "109", "110", "114", "128", "130", "135", "139", "140", "142", "143", "144", "145", "146", "147", "149", "150", "154", "155", "158", "162", "163", "166", "167", "178", "181"), "1", "0")
+no_links_to_lobos <- sum(links_plot_col_pospen$lobos == "1")
+
+netmap_col_lobos_con <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_col_pospen,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               colour = ifelse(links_plot_col_pospen$lobos == 1, "red", "blue"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_col_pospen, aes(lon, lat, size = degree*0.75),
+             colour = ifelse(nodes_col_pospen$lobos == 1, "red", "blue")) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_to_lobos))
+
+
+## Calcular caminos más cortos desde sitio colonia ("10") hacia los 32 sitios lobos
+caminos <- shortest.paths(net_colonia, v = V(net_colonia)$colonia == "1", to = V(net_colonia)$lobos == "1", mode = "out")
+caminos <- data.frame(caminos)
+caminos <- reshape(caminos, varying = list(names(caminos)[1:32]), v.names = "Frecuencia", timevar = "Sitios", direction = "long")
+hist_cam <- ggplot(caminos, aes(x = Frecuencia)) +
+  geom_bar() +
+  labs(x = "Caminos más cortos colonia-lobos", y = "Frecuencia")
 
 ```
