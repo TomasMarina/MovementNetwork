@@ -316,13 +316,21 @@ no_sites_col_day <- nrow(nodes_col_day)
 nodes_col_night
 no_sites_col_night <- nrow(nodes_col_night)
 nodes_col_prepen
+no_sites_col_prepen <- nrow(nodes_col_prepen)
 nodes_col_pospen
+no_sites_col_pospen <- nrow(nodes_col_pospen)
+
 # Individual
 nodes_indA
+no_sites_indA <- nrow(nodes_indA)
 nodes_indB
+no_sites_indB <- nrow(nodes_indB)
 nodes_indC
+no_sites_indC <- nrow(nodes_indC)
 nodes_indD
+no_sites_indD <- nrow(nodes_indD)
 nodes_indE
+no_sites_indE <- nrow(nodes_indE)
 
 ## Export site lists as .csv files
 # write.csv(list_name, file = "../data/list_name.csv")
@@ -396,10 +404,15 @@ no_links_col_prepen <- nrow(links_col_prepen)
 links_col_pospen
 no_links_col_pospen <- nrow(links_col_pospen)
 links_indA
+no_links_indA <- nrow(links_indA)
 links_indB
+no_links_indB <- nrow(links_indB)
 links_indC
+no_links_indC <- nrow(links_indC)
 links_indD
+no_links_indD <- nrow(links_indD)
 links_indE
+no_links_indE <- nrow(links_indE)
 
 ## Export movement list as .csv file
 # write.csv(list_name, file = "../data/list_name.csv")
@@ -611,7 +624,8 @@ links_colonia$to <- as.integer(links_colonia$to)
 links_plot_colonia <- links_colonia %>%
   inner_join(nodes_colonia %>% select(site, lon, lat), by = c('from' = 'site')) %>%
   rename(x = lon, y = lat) %>%
-  inner_join(nodes_colonia %>% select(site, lon, lat), by = c('to' = 'site'))
+  inner_join(nodes_colonia %>% select(site, lon, lat), by = c('to' = 'site')) %>% 
+  rename(xend = lon, yend = lat)
 assert_that(nrow(links_plot_colonia) == nrow(links_colonia))
 
 netmap_colonia <- ggplot() +
@@ -626,8 +640,25 @@ netmap_colonia <- ggplot() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
-  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_colonia))
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label= paste('# links:', no_links_colonia)) +
+  annotate(geom = "text", x = -Inf, y = Inf, vjust=1, hjust=-.1, label=paste('# sites:', no_sites_colonia))
 
+netmap_colonia_outdeg <- ggplot() +
+  geom_sf(data = shapefile_idle) +
+  geom_segment(data = links_plot_colonia,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
+               size = 0.5, alpha = 0.5) +
+  geom_point(data = nodes_colonia, aes(lon, lat,
+                                       colour = V(net_colonia)$out.deg/sum(V(net_colonia)$out.deg))) +
+  scale_color_gradient(low = "yellow", high = "red", na.value = NA) +
+  theme_bw() +
+  theme(axis.line = element_line(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Conexiones de salida", colour = "Proporción") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label= paste('# links:', no_links_colonia)) +
+  annotate(geom = "text", x = -Inf, y = Inf, vjust=1, hjust=-.1, label=paste('# sites:', no_sites_colonia))
 
 # Pre and pos-penguin networks (2020-03-10)
 links_col_prepen$from <- as.integer(links_col_prepen$from)
@@ -651,7 +682,9 @@ netmap_col_prepen <- ggplot() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
-  labs(title = "Movement network Pre-penguin departure (2020-03-10)")
+  labs(title = "Movement network Pre-penguin departure (2020-03-10)") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label= paste('# links:', no_links_col_prepen)) +
+  annotate(geom = "text", x = -Inf, y = Inf, vjust=1, hjust=-.1, label=paste('# sites:', no_sites_col_prepen))
 
 
 links_col_pospen$from <- as.integer(links_col_pospen$from)
@@ -675,7 +708,9 @@ netmap_col_pospen <- ggplot() +
   theme(axis.line = element_line(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
-  labs(title = "Movement network Pos-penguin departure (2020-03-10)")
+  labs(title = "Movement network Pos-penguin departure (2020-03-10)") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label= paste('# links:', no_links_col_pospen)) +
+  annotate(geom = "text", x = -Inf, y = Inf, vjust=1, hjust=-.1, label=paste('# sites:', no_sites_col_pospen))
 
 
 # By individual
@@ -695,12 +730,14 @@ netmap_indE <- ggplot() +
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
    guides(colour = guide_legend("Individual")) +
-   labs(title = "Movement network by Individual E")
+   labs(title = "Movement network by Individual E") +
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label= paste('# links:', no_links_indE)) +
+  annotate(geom = "text", x = -Inf, y = Inf, vjust=1, hjust=-.1, label=paste('# sites:', no_sites_indE))
 
 ## Save plots
 
-# pdf("../figures/plot_name.pdf")
-# plot_name
+# pdf("../figures/netmap_colonia_outdeg.pdf")
+# netmap_colonia_outdeg
 # dev.off()
 
 # pdf("../figures/netmap_col_penguin.pdf")
@@ -1172,6 +1209,29 @@ net_col_pospen <- graph_from_data_frame(links_col_pospen, directed = TRUE, verti
 
 ## Centrality indices
 
+# Degree
+V(net_colonia)$tot.deg <- degree(net_colonia, mode = "total")
+V(net_colonia)$in.deg <- degree(net_colonia, mode = "in")
+V(net_colonia)$out.deg <- degree(net_colonia, mode = "out")
+vertex.attributes(net_colonia)
+
+data_totdeg <- degree(net_colonia, mode = "total")
+hist_deg <- ggplot(data.frame(data_totdeg), aes(x = data.frame(data_totdeg)[,1])) +
+  geom_bar() +
+  labs(x = "Cantidad de conexiones totales", y = "Frecuencia")
+data_indeg <- degree(net_colonia, mode = "in")
+hist_indeg <- ggplot(data.frame(data_indeg), aes(x = data.frame(data_indeg)[,1])) +
+  geom_bar() +
+  labs(x = "Cantidad de conexiones de entrada", y = "Frecuencia")
+data_outdeg <- degree(net_colonia, mode = "out")
+hist_outdeg <- ggplot(data.frame(data_outdeg), aes(x = data.frame(data_outdeg)[,1])) +
+  geom_bar() +
+  labs(x = "Cantidad de conexiones de salida", y = "Frecuencia")
+
+# pdf("../figures/hist_deg.pdf")
+# hist_deg
+# dev.off()
+
 ```
 
 
@@ -1249,7 +1309,7 @@ netmap_col_lobos_con <- ggplot() +
   geom_segment(data = links_plot_col_pospen,
                aes(x = x, xend = xend, y = y, yend = yend),
                arrow = arrow(length = unit(0.1, "inches"), type = "closed"),
-               colour = ifelse(links_plot_col_pospen$lobos == 1, "red", "blue"),
+               colour = ifelse(links_plot_col_pospen$lobos == 1, "red", "gray60"),
                size = 0.5, alpha = 0.5) +
   geom_point(data = nodes_col_pospen, aes(lon, lat, size = degree*0.75),
              colour = ifelse(nodes_col_pospen$lobos == 1, "red", "blue")) +
@@ -1258,10 +1318,11 @@ netmap_col_lobos_con <- ggplot() +
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none") +
-  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_to_lobos))
+  annotate(geom = "text", x = Inf, y = Inf, vjust=1, hjust=1, label=paste('# links:', no_links_to_lobos)) +
+  annotate(geom = "text", x = -Inf, y = Inf, vjust = 1, hjust = -.1, label=paste('# sites:', no_sites_lobos))
 
-# pdf(file = "../figures/plot_links_lobos.pdf")
-# netmap_col_lobos_con
+# pdf(file = "../figures/hist_shortest_lobos.pdf")
+# hist_cam
 # dev.off()
 
 ## Calcular caminos más cortos desde sitio colonia ("10") hacia los 32 sitios lobos
@@ -1270,6 +1331,6 @@ caminos <- data.frame(caminos)
 caminos <- reshape(caminos, varying = list(names(caminos)[1:32]), v.names = "Frecuencia", timevar = "Sitios", direction = "long")
 hist_cam <- ggplot(caminos, aes(x = Frecuencia)) +
   geom_bar() +
-  labs(x = "Caminos más cortos colonia-lobos", y = "Frecuencia")
+  labs(x = "Shortest paths between colony and sea lions sites", y = "Frequency")
 
 ```
